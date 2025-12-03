@@ -1,0 +1,5 @@
+# requirements.txt
+streamlit
+streamlit-authenticator
+pyyaml
+mysql-connector-python  # Adiciona o conector MySQL
