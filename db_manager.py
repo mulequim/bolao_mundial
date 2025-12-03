@@ -16,9 +16,12 @@ class DBManager:
         self.conn = st.connection(
             "postgresql", 
             type="sql",
-            # CREDENCIAIS DO SUPABASE (obtidas do secrets.toml):
             dialect="postgresql",
-            server="swafxjmhzpoozhccsvzv.supabase.co", 
+            # ERRO ANTERIOR: server="swafxjmhzpoozhccsvzv.supabase.co", 
+            
+            # ✅ CORRIGIDO: USE 'host'
+            host="swafxjmhzpoozhccsvzv.supabase.co", 
+            
             database="postgres",
             username="postgres",
             password="_GJ$e5drTfRR6Yi", 
