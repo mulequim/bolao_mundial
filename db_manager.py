@@ -1,7 +1,10 @@
 # db_manager.py
 import streamlit as st
 import pandas as pd
-from typing import List, Dict
+# Removendo a tipagem List e Dict se não estiverem sendo usadas, para evitar erros de import
+# from typing import List, Dict 
+# Usando typing.Optional para compatibilidade
+from typing import Optional 
 
 class DBManager:
     """
@@ -9,16 +12,20 @@ class DBManager:
     """
     
     def __init__(self):
-        # GARANTA QUE ESTE NOME "postgresql" ESTÁ CORRETO
-        self.conn = st.connection("postgresql", type="sql") 
+        # --- DEBUG: PASSANDO CREDENCIAIS DIRETAMENTE PARA IGNORAR SECRETS.TOML ---
+        self.conn = st.connection(
+            "postgresql", 
+            type="sql",
+            # CREDENCIAIS DO SUPABASE (obtidas do secrets.toml):
+            dialect="postgresql",
+            server="swafxjmhzpoozhccsvzv.supabase.co", 
+            database="postgres",
+            username="postgres",
+            password="_GJ$e5drTfRR6Yi", 
+            port="5432" 
+        )
         self.init_db()
+        
+    # --- MÉTODOS EXISTENTES ABAIXO (init_db, get_users_for_auth, etc.) ---
     
-    def init_db(self):
-        """Cria as tabelas USUARIOS e PALPITES se elas não existirem."""
-        try:
-            # ... (SQL para criar USUARIOS e PALPITES) ...
-            st.success("Tabelas verificadas/criadas com sucesso no banco de dados!")
-        except Exception as e:
-            # É aqui que a falha de conexão aparece!
-            st.error(f"Erro ao inicializar o DB: {e}") 
-            # Dica: Se você ver uma mensagem de erro aqui ao rodar, o problema é na conexão (secrets.toml)
+    # ... (init_db, get_users_for_auth, register_user, add_game, get_open_games, get_user_id_by_username, save_palpite) ...
