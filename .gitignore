@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+f# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class
@@ -143,6 +143,20 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# --- ADIÇÕES PARA O PROJETO STREAMLIT ---
+
+# Arquivo de segredos/chaves de conexão do banco de dados (CRUCIAL!)
+.streamlit/secrets.toml
+
+# Opcional: Se o seu config.yaml tiver chaves de cookies sensíveis ou hashes que você não quer expostos, ignore-o.
+# Se for a ÚNICA fonte de usuários, mantenha-o NO GitHub, mas certifique-se de que a 'key' do cookie no arquivo é trocada periodicamente.
+# config.yaml 
+
+# Arquivos de estado interno do Streamlit (opcional)
+.streamlit/
+
+
 
 # Spyder project settings
 .spyderproject
