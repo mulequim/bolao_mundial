@@ -1,0 +1,21 @@
+cookie:
+  # O nome do cookie que será usado para a sessão do usuário
+  name: "bolao_cookie"
+  # Uma chave secreta de no mínimo 32 caracteres (Pode ser qualquer string forte)
+  key: "a_chave_secreta_e_muito_longa_e_segura_para_o_bolao_secreto"
+  # Dias até o cookie expirar (ex: 30 dias)
+  expiry_days: 30
+
+credentials:
+  # Credenciais iniciais (serão sobrescritas e completadas pelo DBManager)
+  usernames:
+    # Apenas para a estrutura inicial. O DBManager carrega os dados reais.
+    placeholder_user:
+      name: Placeholder Name
+      password: placeholder_password
+      function: Jogador
+
+preauthorized:
+  # Você pode pre-autorizar usuários por email aqui, se desejar.
+  # emails:
+  #   - exemplo@dominio.com
