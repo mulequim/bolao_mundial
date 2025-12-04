@@ -3,74 +3,21 @@ import pandas as pd
 from typing import Optional
 
 class DBManager:
+    """
+    Conecta ao banco usando apenas st.connection('postgresql').
+    O Streamlit pega automaticamente tudo do secrets TOML.
+    """
 
     def __init__(self):
         try:
-            # Busca a configuração oficial
-            if "connections" not in st.secrets or "postgresql" not in st.secrets["connections"]:
-                raise RuntimeError("Configuração 'connections.postgresql' não encontrada em st.secrets.")
-
-            conf = st.secrets["connections"]["postgresql"]
-
-            # Conexão oficial
+            # Conecta conforme definido em secrets.toml ( connections.postgresql )
             self.conn = st.connection("postgresql", type="sql")
-
-            # Cria tabelas se necessário
-            self.init_db()
-
         except Exception as e:
             st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
             st.stop()
 
-    # ---------------- Tabelas ----------------
-    def init_db(self):
-        try:
-            self.conn.query("""
-                CREATE TABLE IF NOT EXISTS usuarios (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(50) UNIQUE NOT NULL,
-                    name VARCHAR(100) NOT NULL,
-                    password_hash VARCHAR(255) NOT NULL,
-                    function VARCHAR(20) DEFAULT 'Jogador',
-                    email VARCHAR(100)
-                );
-            """)
+    # ------------------- USUÁRIOS -------------------
 
-            self.conn.query("""
-                CREATE TABLE IF NOT EXISTS jogos (
-                    id SERIAL PRIMARY KEY,
-                    time_casa VARCHAR(100),
-                    time_fora VARCHAR(100),
-                    data_hora TIMESTAMPTZ NOT NULL,
-                    placar_casa_final INT,
-                    placar_fora_final INT,
-                    status VARCHAR(20) DEFAULT 'Aberto'
-                );
-            """)
-
-            self.conn.query("""
-                CREATE TABLE IF NOT EXISTS palpites (
-                    id SERIAL PRIMARY KEY,
-                    user_id INT NOT NULL,
-                    jogo_id INT NOT NULL,
-                    palpite_casa INT NOT NULL,
-                    palpite_fora INT NOT NULL,
-                    UNIQUE(user_id, jogo_id)
-                );
-            """)
-
-            self.conn.query("""
-                CREATE TABLE IF NOT EXISTS pontuacao (
-                    id SERIAL PRIMARY KEY,
-                    user_id INT UNIQUE NOT NULL,
-                    pontos_total INT DEFAULT 0
-                );
-            """)
-
-        except Exception as e:
-            st.error(f"Erro ao criar tabelas: {e}")
-
-    # --------------- Usuários ----------------
     def get_users_for_auth(self) -> dict:
         try:
             df = self.conn.query("SELECT username, name, password_hash, function FROM usuarios;")
@@ -81,13 +28,25 @@ class DBManager:
         users = {}
         for _, row in df.iterrows():
             users[row["username"]] = {
-                "email": f"{row['username']}@bolao.com",
+                "email": f"{row['username']}@bolao.com.br",
                 "name": row["name"],
                 "password": row["password_hash"],
                 "function": row["function"]
             }
-
         return users
+
+    def get_user_id_by_username(self, username: str) -> Optional[int]:
+        try:
+            df = self.conn.query(
+                "SELECT id FROM usuarios WHERE username=%s LIMIT 1;",
+                params=(username,)
+            )
+            if df.empty:
+                return None
+            return int(df.iloc[0]["id"])
+        except Exception as e:
+            st.error(f"Erro ao buscar user_id: {e}")
+            return None
 
     def register_user(self, username, name, password_hash):
         try:
@@ -98,4 +57,39 @@ class DBManager:
             return True
         except Exception as e:
             st.error(f"Erro ao registrar usuário: {e}")
+            return False
+
+    # ------------------- JOGOS -------------------
+
+    def get_open_games(self):
+        try:
+            return self.conn.query("SELECT * FROM jogos WHERE status='Aberto';")
+        except Exception as e:
+            st.error(f"Erro ao buscar jogos: {e}")
+            return pd.DataFrame()
+
+    def add_game(self, time_casa, time_fora, data_hora):
+        try:
+            self.conn.query("""
+                INSERT INTO jogos (time_casa, time_fora, data_hora)
+                VALUES (%s, %s, %s)
+            """, params=(time_casa, time_fora, data_hora))
+            return True
+        except Exception as e:
+            st.error(f"Erro ao cadastrar jogo: {e}")
+            return False
+
+    # ------------------- PALPITES -------------------
+
+    def save_palpite(self, user_id, jogo_id, palpite_casa, palpite_fora):
+        try:
+            self.conn.query("""
+                INSERT INTO palpites (user_id, jogo_id, palpite_casa, palpite_fora)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (user_id, jogo_id)
+                DO UPDATE SET palpite_casa=EXCLUDED.palpite_casa, palpite_fora=EXCLUDED.palpite_fora
+            """, params=(user_id, jogo_id, palpite_casa, palpite_fora))
+            return True
+        except Exception as e:
+            st.error(f"Erro ao salvar palpite: {e}")
             return False
