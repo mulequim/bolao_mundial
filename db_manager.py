@@ -21,7 +21,7 @@ class DBManager:
                 database="postgres",
                 username="postgres",
                 password="_GJ$e5drTfRR6Yi", 
-                port="5432",
+                port="6543",
                 sslmode="require"
             )
             self.init_db()
