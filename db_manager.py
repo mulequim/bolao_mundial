@@ -17,13 +17,12 @@ class DBManager:
             "postgresql", 
             type="sql",
             dialect="postgresql",
-            host="swafxjmhzpoozhccsvzv.supabase.co", 
+            host="swafxjmhzpoozhccsvzv.supabase.co",
             database="postgres",
             username="postgres",
-            password="_GJ$e5drTfRR6Yi", 
-            # ✅ TROCA FINAL DA PORTA PARA O POOLER
-            port="6543", 
-            sslmode="require" 
+            password="_GJ$e5drTfRR6Yi",
+            port="5432",
+            sslmode="require"
         )
             self.init_db()
         except Exception as e:
