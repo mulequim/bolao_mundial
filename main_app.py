@@ -1,13 +1,11 @@
 import streamlit as st
-import db_manager as db  # importa o arquivo, não uma classe
+from db_manager import get_conn
 
 st.title("🔌 Teste de Conexão com o Banco (Supabase)")
 
 try:
-    # tenta consultar qualquer tabela só para testar a conexão
-    usuarios = db.get_usuarios()
-    st.success("🎉 Teste concluído! Conexão funcionando.")
-    st.dataframe(usuarios)
-
+    conn = get_conn()
+    conn.query("SELECT 1;")   # teste simples
+    st.success("🎉 Teste concluído! Banco conectado com sucesso!")
 except Exception as e:
     st.error(f"❌ Erro ao conectar ao banco: {e}")
