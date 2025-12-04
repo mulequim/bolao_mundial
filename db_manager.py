@@ -2,6 +2,8 @@
 import streamlit as st
 import pandas as pd
 from typing import Optional
+import datetime
+
 
 class DBManager:
     """
@@ -11,28 +13,29 @@ class DBManager:
 
     def __init__(self):
         try:
-            # Verifica se a chave correta existe
+            # Confere se existe a chave correta no Streamlit Cloud
             if "connections" not in st.secrets or "postgresql" not in st.secrets["connections"]:
                 raise RuntimeError(
-                    "Configuração ausente: st.secrets['connections']['postgresql'] não encontrada.\n"
-                    "Corrija em Settings > Secrets no Streamlit Cloud."
+                    "Configuração 'connections.postgresql' não encontrada em st.secrets. "
+                    "Verifique Settings > Secrets no Streamlit Cloud."
                 )
 
-            # Lê configuração
             conf = st.secrets["connections"]["postgresql"]
 
-            # Cria conexão
-            self.conn = st.connection(
-                "postgresql",
-                type="sql",
-                dialect="postgresql",
-                host=conf["host"],
-                port=conf.get("port", 5432),
-                database=conf["database"],
-                username=conf["username"],
-                password=conf["password"],
-                sslmode=conf.get("sslmode", "require")
-            )
+            # Monta parâmetros mínimos para st.connection()
+            conn_kwargs = {
+                "dialect": conf.get("dialect", "postgresql"),
+                "host": conf.get("host"),
+                "port": int(conf.get("port", 5432)),
+                "database": conf.get("database"),
+                "username": conf.get("username"),
+                "password": conf.get("password"),
+            }
+
+            # ⚠️ NÃO adicionar sslmode — Streamlit Cloud faz automaticamente
+
+            # Cria a conexão
+            self.conn = st.connection("postgresql", type="sql", **conn_kwargs)
 
             # Inicializa tabelas
             self.init_db()
@@ -41,9 +44,7 @@ class DBManager:
             st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
             st.stop()
 
-    # -------------------------------------------------------------------------
-    # CRIA TABELAS
-    # -------------------------------------------------------------------------
+    # --- CRIA TABELAS ---
     def init_db(self):
         try:
             self.conn.query("""
@@ -96,9 +97,7 @@ class DBManager:
         except Exception as e:
             st.error(f"Erro ao criar tabelas: {e}")
 
-    # -------------------------------------------------------------------------
-    # BUSCAR USUÁRIOS (login)
-    # -------------------------------------------------------------------------
+    # --- USUÁRIOS ---
     def get_users_for_auth(self) -> dict:
         try:
             df = self.conn.query(
@@ -111,18 +110,14 @@ class DBManager:
 
         users = {}
         for _, row in df.iterrows():
-            users[row['username']] = {
-                'email': f"{row['username']}@bolao.com.br",
-                'name': row['name'],
-                'password': row['password_hash'],
-                'function': row['function']
+            users[row["username"]] = {
+                "email": f"{row['username']}@bolao.com",
+                "name": row["name"],
+                "password": row["password_hash"],
+                "function": row["function"],
             }
-
         return users
 
-    # -------------------------------------------------------------------------
-    # REGISTRAR NOVO USUÁRIO
-    # -------------------------------------------------------------------------
     def register_user(self, username: str, name: str, password_hash: str) -> bool:
         try:
             self.conn.query("""
@@ -134,9 +129,6 @@ class DBManager:
             st.error(f"Erro ao registrar usuário: {e}")
             return False
 
-    # -------------------------------------------------------------------------
-    # BUSCAR ID DO USUÁRIO
-    # -------------------------------------------------------------------------
     def get_user_id_by_username(self, username: str) -> Optional[int]:
         try:
             df = self.conn.query(
@@ -146,5 +138,6 @@ class DBManager:
             if len(df) == 0:
                 return None
             return int(df.iloc[0]["id"])
-        except Exception:
+        except Exception as e:
+            st.error(f"Erro ao buscar ID do usuário: {e}")
             return None
