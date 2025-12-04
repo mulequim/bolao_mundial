@@ -2,8 +2,6 @@
 import streamlit as st
 import pandas as pd
 from typing import Optional
-import sys
-import datetime
 
 class DBManager:
     """
@@ -13,45 +11,39 @@ class DBManager:
 
     def __init__(self):
         try:
-            # Usa a configuração que está em st.secrets['database']
-            if "database" not in st.secrets:
-                raise RuntimeError("Chave 'database' não encontrada em st.secrets. Verifique Settings > Secrets no Streamlit Cloud.")
+            # Verifica se a chave correta existe
+            if "connections" not in st.secrets or "postgresql" not in st.secrets["connections"]:
+                raise RuntimeError(
+                    "Configuração ausente: st.secrets['connections']['postgresql'] não encontrada.\n"
+                    "Corrija em Settings > Secrets no Streamlit Cloud."
+                )
 
-            # Aguarda o Streamlit prover os secrets (em Cloud pode demorar um pouco)
-            conf = st.secrets["database"]
+            # Lê configuração
+            conf = st.secrets["connections"]["postgresql"]
 
-            # Monta kwargs mínimos para st.connection
-            conn_kwargs = {
-                "dialect": "postgresql",
-                "host": conf.get("host"),
-                "database": conf.get("database"),
-                "username": conf.get("user") or conf.get("username"),
-                "password": conf.get("password"),
-            }
+            # Cria conexão
+            self.conn = st.connection(
+                "postgresql",
+                type="sql",
+                dialect="postgresql",
+                host=conf["host"],
+                port=conf.get("port", 5432),
+                database=conf["database"],
+                username=conf["username"],
+                password=conf["password"],
+                sslmode=conf.get("sslmode", "require")
+            )
 
-            # porta
-            port = conf.get("port")
-            if port is not None:
-                try:
-                    conn_kwargs["port"] = int(port)
-                except Exception:
-                    conn_kwargs["port"] = port
-
-            # sslmode opcional
-            if "sslmode" in conf:
-                conn_kwargs["sslmode"] = conf["sslmode"]
-
-            # Cria a conexão (a string "postgresql" e type="sql" são importantes)
-            self.conn = st.connection("postgresql", type="sql", **conn_kwargs)
-
-            # Inicializa tabelas (se necessário)
+            # Inicializa tabelas
             self.init_db()
 
         except Exception as e:
             st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
             st.stop()
 
-    # --- CRIA TABELAS ---
+    # -------------------------------------------------------------------------
+    # CRIA TABELAS
+    # -------------------------------------------------------------------------
     def init_db(self):
         try:
             self.conn.query("""
@@ -104,7 +96,9 @@ class DBManager:
         except Exception as e:
             st.error(f"Erro ao criar tabelas: {e}")
 
-    # --- USUÁRIOS ---
+    # -------------------------------------------------------------------------
+    # BUSCAR USUÁRIOS (login)
+    # -------------------------------------------------------------------------
     def get_users_for_auth(self) -> dict:
         try:
             df = self.conn.query(
@@ -126,6 +120,9 @@ class DBManager:
 
         return users
 
+    # -------------------------------------------------------------------------
+    # REGISTRAR NOVO USUÁRIO
+    # -------------------------------------------------------------------------
     def register_user(self, username: str, name: str, password_hash: str) -> bool:
         try:
             self.conn.query("""
@@ -137,6 +134,17 @@ class DBManager:
             st.error(f"Erro ao registrar usuário: {e}")
             return False
 
+    # -------------------------------------------------------------------------
+    # BUSCAR ID DO USUÁRIO
+    # -------------------------------------------------------------------------
     def get_user_id_by_username(self, username: str) -> Optional[int]:
         try:
             df = self.conn.query(
+                "SELECT id FROM USUARIOS WHERE username = %s;",
+                params=(username,)
+            )
+            if len(df) == 0:
+                return None
+            return int(df.iloc[0]["id"])
+        except Exception:
+            return None
