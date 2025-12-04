@@ -1,79 +1,76 @@
+# db_manager.py
 import streamlit as st
 import pandas as pd
+from typing import Optional
 
-def get_conn():
-    """Retorna conexão ativa do Streamlit com o PostgreSQL."""
-    return st.connection("postgresql", type="sql")
+class DBManager:
 
+    def __init__(self):
+        try:
+            # Conferindo se o secrets tem a chave correta
+            if "connections" not in st.secrets or "postgresql" not in st.secrets["connections"]:
+                raise RuntimeError("Configuração 'connections.postgresql' não encontrada em st.secrets.")
 
-# ================================
-#         TABELA: usuarios
-# ================================
-def get_usuarios():
-    conn = get_conn()
-    df = conn.query("SELECT * FROM usuarios ORDER BY id;")
-    return df
+            conf = st.secrets["connections"]["postgresql"]
 
+            # Cria conexão usando EXACTAMENTE o formato que o Streamlit Cloud exige
+            self.conn = st.connection(
+                "postgresql",
+                type="sql",
+                dialect="postgresql",
+                host=conf["host"],
+                port=conf["port"],
+                database=conf["database"],
+                username=conf["username"],
+                password=conf["password"],
+            )
 
-def add_usuario(nome, email):
-    conn = get_conn()
-    conn.query(
-        "INSERT INTO usuarios (nome, email) VALUES (%s, %s);",
-        params=(nome, email)
-    )
+        except Exception as e:
+            st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
+            st.stop()
 
+    # -------------------------
+    # FUNÇÃO DE TESTE (opcional)
+    # -------------------------
+    def test_connection(self):
+        try:
+            df = self.conn.query("SELECT 1 as ok;")
+            return True
+        except Exception as e:
+            st.error(f"Erro no teste de conexão: {e}")
+            return False
 
-# ================================
-#         TABELA: jogos
-# ================================
-def get_jogos():
-    conn = get_conn()
-    return conn.query("SELECT * FROM jogos ORDER BY id;")
+    # -------------------------
+    # BUSCA DE USUÁRIOS
+    # -------------------------
+    def get_users_for_auth(self):
+        try:
+            df = self.conn.query("SELECT username, name, password_hash, function FROM usuarios;")
+            users = {}
+            for _, row in df.iterrows():
+                users[row["username"]] = {
+                    "email": f"{row['username']}@bolao.com",
+                    "name": row["name"],
+                    "password": row["password_hash"],
+                    "function": row["function"],
+                }
+            return users
+        except:
+            return {}
 
-
-# ================================
-#         TABELA: palpites
-# ================================
-def salvar_palpite(id_usuario, id_jogo, palpite_time1, palpite_time2):
-    conn = get_conn()
-    conn.query(
-        """
-        INSERT INTO palpites (id_usuario, id_jogo, palpite_time1, palpite_time2)
-        VALUES (%s, %s, %s, %s)
-        ON CONFLICT (id_usuario, id_jogo)
-        DO UPDATE SET
-            palpite_time1 = EXCLUDED.palpite_time1,
-            palpite_time2 = EXCLUDED.palpite_time2;
-        """,
-        params=(id_usuario, id_jogo, palpite_time1, palpite_time2),
-    )
-
-
-def get_palpite_usuario(id_usuario):
-    conn = get_conn()
-    return conn.query(
-        "SELECT * FROM palpites WHERE id_usuario = %s;",
-        params=(id_usuario,)
-    )
-
-
-# ================================
-#         TABELA: pontuacao
-# ================================
-def get_pontuacao():
-    conn = get_conn()
-    return conn.query("SELECT * FROM pontuacao ORDER BY pontos DESC;")
-
-
-def atualizar_pontos(id_usuario, pontos):
-    conn = get_conn()
-    conn.query(
-        """
-        INSERT INTO pontuacao (id_usuario, pontos)
-        VALUES (%s, %s)
-        ON CONFLICT (id_usuario)
-        DO UPDATE SET
-            pontos = EXCLUDED.pontos;
-        """,
-        params=(id_usuario, pontos)
-    )
+    # -------------------------
+    # REGISTRO DE NOVO USUÁRIO
+    # -------------------------
+    def register_user(self, username, name, password_hash):
+        try:
+            self.conn.query(
+                """
+                INSERT INTO usuarios (username, name, password_hash)
+                VALUES (%s, %s, %s)
+                """,
+                params=(username, name, password_hash)
+            )
+            return True
+        except Exception as e:
+            st.error(f"Erro ao registrar usuário: {e}")
+            return False
