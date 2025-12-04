@@ -14,16 +14,17 @@ class DBManager:
         # em ambientes web/notebooks. Lembre-se de USAR 'host' em vez de 'server'.
         try:
             self.conn = st.connection(
-                "postgresql", 
-                type="sql",
-                dialect="postgresql",
-                host="swafxjmhzpoozhccsvzv.supabase.co", 
-                database="postgres",
-                username="postgres",
-                password="_GJ$e5drTfRR6Yi", 
-                port="6543",
-                sslmode="require"
-            )
+            "postgresql", 
+            type="sql",
+            dialect="postgresql",
+            host="swafxjmhzpoozhccsvzv.supabase.co", 
+            database="postgres",
+            username="postgres",
+            password="_GJ$e5drTfRR6Yi", 
+            # ✅ TROCA FINAL DA PORTA PARA O POOLER
+            port="6543", 
+            sslmode="require" 
+        )
             self.init_db()
         except Exception as e:
             # Em caso de falha de conexão, ele para o aplicativo e avisa.
