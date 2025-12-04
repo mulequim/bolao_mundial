@@ -3,7 +3,7 @@ import pandas as pd
 
 def get_conn():
     """Retorna conexão ativa do Streamlit com o PostgreSQL."""
-    return st.connection("supabase", type="sql")
+    return st.connection("postgresql", type="sql")
 
 
 # ================================
