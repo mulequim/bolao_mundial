@@ -7,60 +7,39 @@ import datetime
 
 class DBManager:
     """
-    Classe responsável por todas as operações de banco de dados (USUARIOS, JOGOS, PALPITES).
-    Lê as credenciais de st.secrets['database'] e cria uma conexão via st.connection(..., type='sql').
+    Classe responsável por operações no banco de dados.
+    Agora usa st.secrets["connections"]["postgresql"] (padrão Streamlit Cloud).
     """
 
     def __init__(self):
         try:
-            # Busca as credenciais no Streamlit Secrets (compatível com Streamlit Cloud)
-            if "database" not in st.secrets:
-                raise RuntimeError("Chave 'database' não encontrada em st.secrets. Verifique Settings > Secrets no Streamlit Cloud.")
+            # --- Verifica configuração correta ---
+            if "connections" not in st.secrets:
+                raise RuntimeError("A chave 'connections' não existe em st.secrets.")
 
-            conf = st.secrets["database"]
+            if "postgresql" not in st.secrets["connections"]:
+                raise RuntimeError("A chave 'postgresql' não existe em [connections] no secrets.toml.")
 
-            # Monta kwargs para st.connection
-            conn_kwargs = {
-                "dialect": "postgresql",
-                "host": conf.get("host"),
-                "database": conf.get("database"),
-                "username": conf.get("user") or conf.get("username"),
-                "password": conf.get("password"),
-            }
+            conf = st.secrets["connections"]["postgresql"]
 
-            # Porta pode ser número ou string no secrets, certifique-se que seja int
-            port = conf.get("port")
-            if port is not None:
-                try:
-                    conn_kwargs["port"] = int(port)
-                except Exception:
-                    conn_kwargs["port"] = port  # deixa como está, st.connection pode aceitar string
+            # --- Conecta usando APENAS o nome do serviço ---
+            self.conn = st.connection("postgresql", type="sql")
 
-            # sslmode se fornecido
-            if "sslmode" in conf:
-                conn_kwargs["sslmode"] = conf["sslmode"]
-
-            # Cria a conexão SQL com os kwargs explicitamente (evita Missing SQL DB connection configuration)
-            self.conn = st.connection("postgresql", type="sql", **conn_kwargs)
-
-            # Teste simples de conexão (não obrigatório, ajuda a debugar)
+            # Teste de conexão
             try:
-                _ = self.conn.query("SELECT 1;")
+                self.conn.query("SELECT 1;")
             except Exception as e:
-                raise RuntimeError(f"Falha ao testar a conexão SQL logo após st.connection(): {e}")
+                raise RuntimeError(f"Falha ao testar conexão: {e}")
 
-            # Inicializa tabelas (se necessário)
+            # Inicializa tabelas
             self.init_db()
 
         except Exception as e:
             st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
-            # Para evitar deixar o app em estado indefinido, paramos a execução
             sys.exit(1)
 
-
-    # --- INICIALIZAÇÃO E CRIAÇÃO DE TABELAS ---
+    # --- CRIA TABELAS ---
     def init_db(self):
-        """Cria as tabelas USUARIOS, JOGOS, PALPITES e PONTUACAO se elas não existirem."""
         try:
             self.conn.query("""
                 CREATE TABLE IF NOT EXISTS USUARIOS (
@@ -72,6 +51,7 @@ class DBManager:
                     email VARCHAR(100) UNIQUE
                 );
             """)
+
             self.conn.query("""
                 CREATE TABLE IF NOT EXISTS JOGOS (
                     id SERIAL PRIMARY KEY,
@@ -83,6 +63,7 @@ class DBManager:
                     status VARCHAR(20) DEFAULT 'Aberto'
                 );
             """)
+
             self.conn.query("""
                 CREATE TABLE IF NOT EXISTS PALPITES (
                     id SERIAL PRIMARY KEY,
@@ -95,6 +76,7 @@ class DBManager:
                     FOREIGN KEY (jogo_id) REFERENCES JOGOS(id) ON DELETE CASCADE
                 );
             """)
+
             self.conn.query("""
                 CREATE TABLE IF NOT EXISTS PONTUACAO (
                     id SERIAL PRIMARY KEY,
@@ -103,127 +85,45 @@ class DBManager:
                     FOREIGN KEY (user_id) REFERENCES USUARIOS(id) ON DELETE CASCADE
                 );
             """)
-            st.success("Tabelas verificadas/criadas com sucesso no banco de dados!")
+
+            st.success("Tabelas verificadas/criadas com sucesso!")
+
         except Exception as e:
-            st.error(f"Erro ao inicializar o DB (SQL): {e}")
+            st.error(f"Erro ao criar tabelas: {e}")
 
-
-    # --- OPERAÇÕES DE USUÁRIO (PARA AUTENTICAÇÃO E CADASTRO) ---
+    # --- USUÁRIOS ---
     def get_users_for_auth(self) -> dict:
-        """
-        Lê todos os usuários do DB para o módulo de autenticação.
-        Retorna um dicionário no formato que o streamlit-authenticator espera.
-        """
         try:
-            query = "SELECT username, name, password_hash, function FROM USUARIOS;"
-            df = self.conn.query(query, ttl=3600)  # Cache por 1 hora
+            df = self.conn.query(
+                "SELECT username, name, password_hash, function FROM USUARIOS;",
+                ttl=3600
+            )
         except Exception as e:
-            st.error(f"Erro ao buscar usuários do DB: {e}")
+            st.error(f"Erro ao buscar usuários: {e}")
             return {}
 
-        users_dict = {}
+        users = {}
         for _, row in df.iterrows():
-            users_dict[row['username']] = {
-                'email': (row['username'] + '@bolao.com.br') if pd.notna(row['username']) else '',
-                'name': row['name'] if pd.notna(row['name']) else '',
-                'password': row['password_hash'] if pd.notna(row['password_hash']) else '',
-                'function': row['function'] if pd.notna(row['function']) else 'Jogador'
+            users[row['username']] = {
+                'email': f"{row['username']}@bolao.com.br",
+                'name': row['name'],
+                'password': row['password_hash'],
+                'function': row['function']
             }
 
-        return users_dict
+        return users
 
     def register_user(self, username: str, name: str, password_hash: str) -> bool:
-        """
-        Insere um novo usuário (função 'Jogador') na tabela.
-        """
         try:
-            # Usa params para evitar SQL injection
-            self.conn.query(
-                """
+            self.conn.query("""
                 INSERT INTO USUARIOS (username, name, password_hash)
                 VALUES (%s, %s, %s);
-                """,
-                params=(username, name, password_hash),
-                ttl=0
-            )
+            """, params=(username, name, password_hash))
             return True
         except Exception as e:
-            st.error(f"Erro ao registrar o usuário: {e}")
+            st.error(f"Erro ao registrar usuário: {e}")
             return False
 
     def get_user_id_by_username(self, username: str) -> Optional[int]:
-        """Busca o ID do usuário pelo nome de usuário."""
         try:
-            query = "SELECT id FROM USUARIOS WHERE username = %s;"
-            df = self.conn.query(query, params=(username,), ttl=3600)
-            if not df.empty:
-                return int(df.iloc[0]['id'])
-        except Exception as e:
-            st.error(f"Erro ao buscar id do usuário: {e}")
-        return None
-
-
-    # --- OPERAÇÕES DE JOGO (ADMIN) ---
-    def add_game(self, time_casa: str, time_fora: str, data_hora: str) -> bool:
-        """
-        Insere um novo jogo na tabela JOGOS.
-        Espera data_hora em string no formato ISO ou 'YYYY-MM-DD HH:MM:SS'
-        """
-        try:
-            # Tenta converter para timestamp para verificar formato (opcional)
-            # Não é estritamente necessário, mas ajuda a detectar erros no momento do input
-            try:
-                # aceita ISO ou formato comum
-                datetime.datetime.fromisoformat(data_hora)
-            except Exception:
-                # tenta com format padrão
-                try:
-                    datetime.datetime.strptime(data_hora, "%Y-%m-%d %H:%M:%S")
-                except Exception:
-                    # não conseguiu parsear - ainda assim deixa passar e o Postgres tentará converter
-                    pass
-
-            self.conn.query(
-                """
-                INSERT INTO JOGOS (time_casa, time_fora, data_hora, status)
-                VALUES (%s, %s, %s, 'Aberto');
-                """,
-                params=(time_casa, time_fora, data_hora),
-                ttl=0
-            )
-            return True
-        except Exception as e:
-            st.error(f"Erro ao adicionar jogo: {e}")
-            return False
-
-    def get_open_games(self) -> pd.DataFrame:
-        """Retorna todos os jogos com status 'Aberto'."""
-        try:
-            query = "SELECT id, time_casa, time_fora, data_hora FROM JOGOS WHERE status = 'Aberto' ORDER BY data_hora ASC;"
-            return self.conn.query(query, ttl=60)  # Cache por 60 segundos
-        except Exception as e:
-            st.error(f"Erro ao buscar jogos abertos: {e}")
-            return pd.DataFrame()
-
-
-    # --- OPERAÇÕES DE PALPITE (JOGADOR) ---
-    def save_palpite(self, user_id: int, jogo_id: int, palpite_casa: int, palpite_fora: int) -> bool:
-        """
-        Salva ou atualiza o palpite do usuário para um jogo específico.
-        """
-        try:
-            self.conn.query(
-                """
-                INSERT INTO PALPITES (user_id, jogo_id, palpite_casa, palpite_fora)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (user_id, jogo_id) DO UPDATE
-                SET palpite_casa = EXCLUDED.palpite_casa,
-                    palpite_fora = EXCLUDED.palpite_fora;
-                """,
-                params=(user_id, jogo_id, palpite_casa, palpite_fora),
-                ttl=0
-            )
-            return True
-        except Exception as e:
-            st.error(f"Erro ao salvar palpite: {e}")
-            return False
+            df = self.conn.query(
