@@ -13,30 +13,43 @@ class DBManager:
 
     def __init__(self):
         try:
-            # --- Verifica configuração correta ---
-            if "connections" not in st.secrets:
-                raise RuntimeError("A chave 'connections' não existe em st.secrets.")
+            # Usa a configuração que está em st.secrets['database']
+            if "database" not in st.secrets:
+                raise RuntimeError("Chave 'database' não encontrada em st.secrets. Verifique Settings > Secrets no Streamlit Cloud.")
 
-            if "postgresql" not in st.secrets["connections"]:
-                raise RuntimeError("A chave 'postgresql' não existe em [connections] no secrets.toml.")
+            # Aguarda o Streamlit prover os secrets (em Cloud pode demorar um pouco)
+            conf = st.secrets["database"]
 
-            conf = st.secrets["connections"]["postgresql"]
+            # Monta kwargs mínimos para st.connection
+            conn_kwargs = {
+                "dialect": "postgresql",
+                "host": conf.get("host"),
+                "database": conf.get("database"),
+                "username": conf.get("user") or conf.get("username"),
+                "password": conf.get("password"),
+            }
 
-            # --- Conecta usando APENAS o nome do serviço ---
-            self.conn = st.connection("postgresql", type="sql")
+            # porta
+            port = conf.get("port")
+            if port is not None:
+                try:
+                    conn_kwargs["port"] = int(port)
+                except Exception:
+                    conn_kwargs["port"] = port
 
-            # Teste de conexão
-            try:
-                self.conn.query("SELECT 1;")
-            except Exception as e:
-                raise RuntimeError(f"Falha ao testar conexão: {e}")
+            # sslmode opcional
+            if "sslmode" in conf:
+                conn_kwargs["sslmode"] = conf["sslmode"]
 
-            # Inicializa tabelas
+            # Cria a conexão (a string "postgresql" e type="sql" são importantes)
+            self.conn = st.connection("postgresql", type="sql", **conn_kwargs)
+
+            # Inicializa tabelas (se necessário)
             self.init_db()
 
         except Exception as e:
             st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
-            sys.exit(1)
+            st.stop()
 
     # --- CRIA TABELAS ---
     def init_db(self):
