@@ -1,101 +1,79 @@
 import streamlit as st
 import pandas as pd
-from typing import Optional
 
-class DBManager:
-    """Gerenciador de banco usando st.connection com Supabase PostgreSQL."""
+def get_conn():
+    """Retorna conexão ativa do Streamlit com o PostgreSQL."""
+    return st.connection("supabase", type="sql")
 
-    def __init__(self):
-        try:
-            # Agora usamos exatamente o formato do secrets testado
-            if "connections" not in st.secrets or "postgresql" not in st.secrets["connections"]:
-                raise RuntimeError("Configuração 'connections.postgresql' não encontrada em st.secrets.")
 
-            # Cria a conexão
-            self.conn = st.connection("postgresql", type="sql")
+# ================================
+#         TABELA: usuarios
+# ================================
+def get_usuarios():
+    conn = get_conn()
+    df = conn.query("SELECT * FROM usuarios ORDER BY id;")
+    return df
 
-        except Exception as e:
-            st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
-            st.stop()
 
-    # -------------------------
-    # USUÁRIOS
-    # -------------------------
-    def get_users_for_auth(self) -> dict:
-        try:
-            query = "SELECT username, name, password_hash, function FROM usuarios;"
-            df = self.conn.query(query)
-        except Exception as e:
-            st.error(f"Erro ao buscar usuários: {e}")
-            return {}
+def add_usuario(nome, email):
+    conn = get_conn()
+    conn.query(
+        "INSERT INTO usuarios (nome, email) VALUES (%s, %s);",
+        params=(nome, email)
+    )
 
-        users = {}
-        for _, row in df.iterrows():
-            users[row["username"]] = {
-                "email": f"{row['username']}@bolao.com",
-                "name": row["name"],
-                "password": row["password_hash"],
-                "function": row["function"]
-            }
-        return users
 
-    def register_user(self, username: str, name: str, password_hash: str) -> bool:
-        try:
-            sql = """
-                INSERT INTO usuarios (username, name, password_hash)
-                VALUES (%s, %s, %s);
-            """
-            self.conn.query(sql, params=(username, name, password_hash))
-            return True
-        except Exception as e:
-            st.error(f"Erro ao registrar usuário: {e}")
-            return False
+# ================================
+#         TABELA: jogos
+# ================================
+def get_jogos():
+    conn = get_conn()
+    return conn.query("SELECT * FROM jogos ORDER BY id;")
 
-    def get_user_id_by_username(self, username: str) -> Optional[int]:
-        try:
-            df = self.conn.query("SELECT id FROM usuarios WHERE username = %s;", params=(username,))
-            if len(df) == 0:
-                return None
-            return int(df.iloc[0]["id"])
-        except:
-            return None
 
-    # -------------------------
-    # JOGOS
-    # -------------------------
-    def add_game(self, time_casa, time_fora, data_hora_str) -> bool:
-        try:
-            sql = """
-                INSERT INTO jogos (time_casa, time_fora, data_hora)
-                VALUES (%s, %s, %s);
-            """
-            self.conn.query(sql, params=(time_casa, time_fora, data_hora_str))
-            return True
-        except Exception as e:
-            st.error(f"Erro ao adicionar jogo: {e}")
-            return False
+# ================================
+#         TABELA: palpites
+# ================================
+def salvar_palpite(id_usuario, id_jogo, palpite_time1, palpite_time2):
+    conn = get_conn()
+    conn.query(
+        """
+        INSERT INTO palpites (id_usuario, id_jogo, palpite_time1, palpite_time2)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (id_usuario, id_jogo)
+        DO UPDATE SET
+            palpite_time1 = EXCLUDED.palpite_time1,
+            palpite_time2 = EXCLUDED.palpite_time2;
+        """,
+        params=(id_usuario, id_jogo, palpite_time1, palpite_time2),
+    )
 
-    def get_open_games(self):
-        try:
-            return self.conn.query("SELECT * FROM jogos WHERE status = 'Aberto';")
-        except Exception as e:
-            st.error(f"Erro ao carregar jogos: {e}")
-            return None
 
-    # -------------------------
-    # PALPITES
-    # -------------------------
-    def save_palpite(self, user_id, jogo_id, placar_casa, placar_fora):
-        try:
-            sql = """
-                INSERT INTO palpites (user_id, jogo_id, palpite_casa, palpite_fora)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (user_id, jogo_id)
-                DO UPDATE SET palpite_casa = EXCLUDED.palpite_casa,
-                              palpite_fora = EXCLUDED.palpite_fora;
-            """
-            self.conn.query(sql, params=(user_id, jogo_id, placar_casa, placar_fora))
-            return True
-        except Exception as e:
-            st.error(f"Erro ao salvar palpite: {e}")
-            return False
+def get_palpite_usuario(id_usuario):
+    conn = get_conn()
+    return conn.query(
+        "SELECT * FROM palpites WHERE id_usuario = %s;",
+        params=(id_usuario,)
+    )
+
+
+# ================================
+#         TABELA: pontuacao
+# ================================
+def get_pontuacao():
+    conn = get_conn()
+    return conn.query("SELECT * FROM pontuacao ORDER BY pontos DESC;")
+
+
+def atualizar_pontos(id_usuario, pontos):
+    conn = get_conn()
+    conn.query(
+        """
+        INSERT INTO pontuacao (id_usuario, pontos)
+        VALUES (%s, %s)
+        ON CONFLICT (id_usuario)
+        DO UPDATE SET
+            pontos = EXCLUDED.pontos;
+        """,
+        params=(id_usuario, pontos)
+    )
