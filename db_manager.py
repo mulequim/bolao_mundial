@@ -1,43 +1,28 @@
 # db_manager.py
+
 import streamlit as st
 import pandas as pd
 from typing import Optional
-import datetime
-
 
 class DBManager:
     """
-    Classe responsável por operações no banco de dados.
-    Agora usa st.secrets["connections"]["postgresql"] (padrão Streamlit Cloud).
+    Conexão automática com o banco usando:
+    st.secrets["connections"]["postgresql"]
+    (Padrão oficial do Streamlit Cloud)
     """
 
     def __init__(self):
         try:
-            # Confere se existe a chave correta no Streamlit Cloud
+            # Verifica se existe a conexão
             if "connections" not in st.secrets or "postgresql" not in st.secrets["connections"]:
                 raise RuntimeError(
-                    "Configuração 'connections.postgresql' não encontrada em st.secrets. "
-                    "Verifique Settings > Secrets no Streamlit Cloud."
+                    "Configuração 'connections.postgresql' não encontrada em st.secrets."
                 )
 
-            conf = st.secrets["connections"]["postgresql"]
+            # Streamlit cria automaticamente a conexão com essa assinatura
+            self.conn = st.connection("postgresql", type="sql")
 
-            # Monta parâmetros mínimos para st.connection()
-            conn_kwargs = {
-                "dialect": conf.get("dialect", "postgresql"),
-                "host": conf.get("host"),
-                "port": int(conf.get("port", 5432)),
-                "database": conf.get("database"),
-                "username": conf.get("username"),
-                "password": conf.get("password"),
-            }
-
-            # ⚠️ NÃO adicionar sslmode — Streamlit Cloud faz automaticamente
-
-            # Cria a conexão
-            self.conn = st.connection("postgresql", type="sql", **conn_kwargs)
-
-            # Inicializa tabelas
+            # Cria tabelas
             self.init_db()
 
         except Exception as e:
@@ -92,8 +77,6 @@ class DBManager:
                 );
             """)
 
-            st.success("Tabelas verificadas/criadas com sucesso!")
-
         except Exception as e:
             st.error(f"Erro ao criar tabelas: {e}")
 
@@ -104,14 +87,13 @@ class DBManager:
                 "SELECT username, name, password_hash, function FROM USUARIOS;",
                 ttl=3600
             )
-        except Exception as e:
-            st.error(f"Erro ao buscar usuários: {e}")
+        except Exception:
             return {}
 
         users = {}
         for _, row in df.iterrows():
             users[row["username"]] = {
-                "email": f"{row['username']}@bolao.com",
+                "email": f"{row['username']}@bolao.com.br",
                 "name": row["name"],
                 "password": row["password_hash"],
                 "function": row["function"],
@@ -135,9 +117,8 @@ class DBManager:
                 "SELECT id FROM USUARIOS WHERE username = %s;",
                 params=(username,)
             )
-            if len(df) == 0:
-                return None
-            return int(df.iloc[0]["id"])
-        except Exception as e:
-            st.error(f"Erro ao buscar ID do usuário: {e}")
+            if len(df):
+                return int(df.iloc[0]["id"])
+            return None
+        except:
             return None
