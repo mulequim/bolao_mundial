@@ -22,8 +22,7 @@ class DBManager:
                 username="postgres",
                 password="_GJ$e5drTfRR6Yi", 
                 # ✅ CORREÇÃO FINAL: USANDO A PORTA DO POOLER (6543)
-                port="6543", 
-                sslmode="require" 
+                port="6543"
             )
             self.init_db() # Agora ele encontrará o método abaixo!
         except Exception as e:
