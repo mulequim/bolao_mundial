@@ -1,7 +1,6 @@
-# requirements.txt
-streamlit
+streamlit>=1.28
 streamlit-authenticator
 pyyaml
 psycopg2-binary
-sqlalchemy  # <--- ADICIONE ESTA LINHA
+sqlalchemy
 pandas
