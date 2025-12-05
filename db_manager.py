@@ -11,11 +11,12 @@ class DBManager:
 
     def __init__(self):
         try:
-            # O nome 'postgresql' deve bater com a chave em secrets (connections.postgresql)
             self.conn = st.connection("postgresql", type="sql")
+            st.write("✅ Conexão inicializada com sucesso")
         except Exception as e:
             st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
             st.stop()
+
 
     def test_connection(self) -> bool:
         """Executa SELECT 1 para validar a conexão."""
