@@ -1,14 +1,9 @@
+from db_manager import DBManager
 import streamlit as st
 
-# Cria a conexão usando o nome definido no secrets
-conn = st.connection("postgresql", type="sql")
+db = DBManager()
 
-# Teste simples
-def test_connection():
-    try:
-        result = conn.query("SELECT 1;", ttl=0)
-        st.success("Conexão OK! Resultado: {}".format(result))
-    except Exception as e:
-        st.error(f"Erro na conexão: {e}")
-
-test_connection()
+if db.test_connection():
+    st.success("Conexão com Supabase funcionando!")
+else:
+    st.error("Falha na conexão.")
