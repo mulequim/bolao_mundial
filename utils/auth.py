@@ -1,9 +1,10 @@
-import hashlib
+import bcrypt
 
 def hash_password(password: str) -> str:
-    """Retorna o hash SHA256 da senha"""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Gera hash bcrypt da senha"""
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode(), salt).decode()
 
 def verify_password(password: str, hashed: str) -> bool:
-    """Verifica se a senha corresponde ao hash"""
-    return hash_password(password) == hashed
+    """Verifica senha com bcrypt"""
+    return bcrypt.checkpw(password.encode(), hashed.encode())
