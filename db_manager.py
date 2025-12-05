@@ -19,9 +19,10 @@ class DBManager:
 
 
     def test_connection(self) -> bool:
-        """Executa SELECT 1 para validar a conexão."""
         try:
-            df = self.conn.query("SELECT 1 AS ok;", ttl=0)
+            st.write("🔄 Executando SELECT 1...")
+            df = self.conn.query("SELECT 1;", ttl=60)
+            st.write("Resultado:", df)
             return not df.empty
         except Exception as e:
             st.error(f"Erro no teste de conexão: {e}")
