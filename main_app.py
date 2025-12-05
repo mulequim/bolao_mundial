@@ -3,6 +3,11 @@ from db_manager import DBManager
 
 st.title("🔌 Teste de Conexão com o Banco (Supabase)")
 
-db = DBManager()
-
-st.success("🎉 Teste concluído!")
+try:
+    db = DBManager()
+    if db.test_connection():
+        st.success("🎉 Teste concluído! Conexão funcionando!")
+    else:
+        st.error("❌ Falha no teste de conexão.")
+except Exception as e:
+    st.error(f"❌ Erro ao conectar ao banco: {e}")
