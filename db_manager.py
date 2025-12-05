@@ -12,17 +12,11 @@ class DBManager:
 
     def __init__(self):
         try:
-            # Monta a URL de conexão a partir dos secrets
             secrets = st.secrets["connections"]["postgresql"]
-            user = secrets["username"]
-            password = secrets["password"]
-            host = secrets["host"]
-            port = secrets["port"]
-            database = secrets["database"]
-
-            url = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-
-            # Cria engine com SSL
+            url = (
+                f"postgresql+psycopg2://{secrets['username']}:{secrets['password']}"
+                f"@{secrets['host']}:{secrets['port']}/{secrets['database']}"
+            )
             self.engine = create_engine(url, connect_args={"sslmode": "require"})
             st.write("✅ Conexão inicializada com sucesso (SQLAlchemy)")
         except Exception as e:
