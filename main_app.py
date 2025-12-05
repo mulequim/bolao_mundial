@@ -1,6 +1,8 @@
+# main_app.py
 import streamlit as st
 from db_manager import DBManager
 
+st.set_page_config(page_title="Teste Supabase", layout="centered")
 st.title("🔌 Teste de Conexão com o Banco (Supabase)")
 
 try:
