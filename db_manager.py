@@ -11,7 +11,7 @@ class DBManager:
 
     def __init__(self):
         try:
-            self.conn = st.connection("postgresql", type="sql")
+            self.conn = st.experimental_connection("postgresql", type="sql")
             st.write("✅ Conexão inicializada com sucesso")
         except Exception as e:
             st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
