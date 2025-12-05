@@ -2,6 +2,9 @@ import pandas as pd
 from sqlalchemy import text
 from db_manager import DBManager
 
+
+
+
 db = DBManager()
 
 def create_game(time_casa: str, time_fora: str, data_hora: str, status: str) -> bool:
@@ -23,3 +26,7 @@ def read_games() -> pd.DataFrame:
     except Exception as e:
         print(f"Erro ao listar jogos: {e}")
         return pd.DataFrame()
+
+def read_all_games() -> pd.DataFrame:
+    query = text("SELECT * FROM jogos ORDER BY data_hora;")
+    return pd.read_sql(query, db.engine)
