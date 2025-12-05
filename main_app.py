@@ -1,15 +1,20 @@
 import streamlit as st
-from models.usuarios import read_users, create_user
-from models.jogos import read_games
+from auth.login import login_page
+from auth.register import register_page
+from auth.session import init_session
 
-st.title("Bolão Mundial 2026")
+st.title("Bolão Copa do Mundo 2026")
+init_session()
 
-st.subheader("Usuários")
-st.write(read_users())
+menu = st.sidebar.selectbox("Menu", ["Login", "Cadastro", "Dashboard"])
 
-if st.button("Criar usuário de teste"):
-    create_user("teste", "Usuário Teste", "hash123", "player", "teste@email.com")
-    st.success("Usuário criado!")
-
-st.subheader("Jogos")
-st.write(read_games())
+if menu == "Login":
+    login_page()
+elif menu == "Cadastro":
+    register_page()
+elif menu == "Dashboard":
+    if st.session_state.logged_in:
+        st.success(f"Bem-vindo, {st.session_state.username}!")
+        st.write("Aqui vai o painel principal do bolão.")
+    else:
+        st.warning("Faça login para acessar o dashboard.")
