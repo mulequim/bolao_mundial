@@ -29,6 +29,7 @@ class DBManager:
             st.error(f"❌ Falha crítica ao conectar ao banco: {e}")
             st.stop()
 
+    
     # -------------------------
     # FUNÇÃO DE TESTE (opcional)
     # -------------------------
