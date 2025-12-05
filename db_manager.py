@@ -30,11 +30,12 @@ class DBManager:
             st.stop()
 
     def test_connection(self) -> bool:
-        """Executa SELECT 1 para validar a conexão."""
         try:
-            df = pd.read_sql("SELECT 1 AS ok;", self.engine)
-            st.write("Resultado:", df)
-            return not df.empty
+            with self.engine.connect() as conn:
+                result = conn.execute(text("SELECT 1"))
+                row = result.fetchone()
+                st.write("Resultado bruto:", row)
+                return row is not None
         except Exception as e:
             st.error(f"Erro no teste de conexão: {e}")
             return False
