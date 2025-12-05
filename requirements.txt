@@ -2,7 +2,6 @@
 streamlit
 streamlit-authenticator
 pyyaml
-mysql-connector-python  # Adiciona o conector MySQL
 psycopg2-binary
 sqlalchemy  # <--- ADICIONE ESTA LINHA
 pandas
