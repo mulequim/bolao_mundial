@@ -31,7 +31,9 @@ def login_page():
                     st.error("Usuário ou senha incorretos.")
         with col2:
             st.markdown("### Ainda não tem conta?")
-            st.page_link("pages/register.py", label="📋 Cadastre-se aqui")
+            if st.button("📋 Cadastre-se aqui"):
+                st.session_state["menu"] = "Cadastro"
+                st.rerun()
 
         st.markdown("---")
         dashboard_preview()
