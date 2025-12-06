@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
+import pytz
 
 def exibir_jogo(jogo):
+    tz = pytz.timezone("America/Sao_Paulo")  # define o fuso horário de referência
+
     col1, col2, col3 = st.columns([2, 1, 2])
     with col1:
         st.image(jogo["brasao_casa"], width=48)
@@ -13,8 +16,8 @@ def exibir_jogo(jogo):
         st.image(jogo["brasao_fora"], width=48)
         st.markdown(f"**{jogo['time_fora']}**")
 
-    # Converte para datetime nativo (garantido)
-    data_jogo = pd.to_datetime(jogo["data_hora"]).to_pydatetime()
+    # Converte para datetime com timezone
+    data_jogo = pd.to_datetime(jogo["data_hora"]).tz_convert(tz).to_pydatetime()
 
     st.caption(f"📅 {data_jogo.strftime('%d/%m/%Y %H:%M')} | 🧩 Grupo {jogo['grupo']}")
 
@@ -26,17 +29,13 @@ def exibir_jogo(jogo):
         else:
             # Limite de 45 minutos antes do jogo
             limite = data_jogo - timedelta(minutes=45)
-            agora = datetime.now()
+            agora = datetime.now(tz)  # também com timezone
 
-            # Ambos são datetime.datetime
-            try:
-                if agora > limite:
-                    st.error("⏰ Palpites encerrados para este jogo.")
-                else:
-                    st.session_state["jogo_selecionado"] = jogo["id"]
-                    st.session_state["menu"] = "Palpite"
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Erro ao comparar datas: {e}")
+            if agora > limite:
+                st.error("⏰ Palpites encerrados para este jogo.")
+            else:
+                st.session_state["jogo_selecionado"] = jogo["id"]
+                st.session_state["menu"] = "Palpite"
+                st.rerun()
 
     st.markdown("---")
