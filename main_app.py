@@ -15,11 +15,18 @@ if "menu" not in st.session_state:
     st.session_state["menu"] = "Início"
 
 # Sidebar com menu
-menu = st.sidebar.selectbox(
-    "Menu",
-    ["Início", "Login", "Cadastro", "Dashboard"],
-    index=["Início", "Login", "Cadastro", "Dashboard"].index(st.session_state["menu"])
-)
+def get_menu():
+    # Lista de opções válidas
+    menu_options = ["Início", "Login", "Cadastro", "Dashboard", "Palpite"]
+
+    # Pega o valor atual do session_state, ou usa "Início" como padrão
+    current_menu = st.session_state.get("menu", "Início")
+
+    # Se o valor não estiver na lista, volta para "Início"
+    if current_menu not in menu_options:
+        current_menu = "Início"
+
+    return current_menu, menu_options
 
 # Renderização das páginas
 if menu == "Login":
