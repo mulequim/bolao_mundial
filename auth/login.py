@@ -25,7 +25,7 @@ def login_page():
                 if not user.empty and verify_password(password, user.iloc[0]["password_hash"]):
                     login_user(user.iloc[0]["id"], username)
                     st.success("Login realizado com sucesso!")
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error("Usuário ou senha incorretos.")
         with col2:
