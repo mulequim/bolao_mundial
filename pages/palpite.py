@@ -8,7 +8,7 @@ from models.palpites import salvar_palpite
 
 def palpite_page():
     tz = pytz.timezone("America/Sao_Paulo")  # define fuso horário
-
+    
     jogo_id = st.session_state.get("jogo_selecionado")
     if not jogo_id:
         st.warning("Nenhum jogo selecionado.")
