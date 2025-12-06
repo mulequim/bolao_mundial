@@ -6,7 +6,6 @@ from pages.dashboard_preview import dashboard_preview
 
 def login_page():
     init_session()
-    st.title("🏆 Bolão Copa do Mundo 2026")
 
     if st.session_state.logged_in:
         st.success(f"Você está logado como {st.session_state.username}")
