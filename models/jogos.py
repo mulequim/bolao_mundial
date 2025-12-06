@@ -1,11 +1,10 @@
 import pandas as pd
 from sqlalchemy import text
 from db_manager import DBManager
-
-
-
+import pytz
 
 db = DBManager()
+
 
 def create_game(time_casa: str, time_fora: str, data_hora: str, status: str) -> bool:
     try:
@@ -37,7 +36,15 @@ def read_game_by_id(jogo_id: int) -> dict | None:
         df = pd.read_sql(query, db.engine, params={"id": jogo_id})
         if df.empty:
             return None
-        return df.iloc[0].to_dict()
+
+        jogo = df.iloc[0].to_dict()
+
+        # Converte data_hora para datetime com timezone
+        tz = pytz.timezone("America/Sao_Paulo")
+        jogo["data_hora"] = pd.to_datetime(jogo["data_hora"]).tz_convert(tz).to_pydatetime()
+
+        return jogo
     except Exception as e:
         print(f"Erro ao buscar jogo por id: {e}")
         return None
+
