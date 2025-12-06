@@ -30,3 +30,14 @@ def read_games() -> pd.DataFrame:
 def read_all_games() -> pd.DataFrame:
     query = text("SELECT * FROM jogos ORDER BY data_hora;")
     return pd.read_sql(query, db.engine)
+    
+def read_game_by_id(jogo_id: int) -> dict | None:
+    try:
+        query = text("SELECT * FROM jogos WHERE id = :id")
+        df = pd.read_sql(query, db.engine, params={"id": jogo_id})
+        if df.empty:
+            return None
+        return df.iloc[0].to_dict()
+    except Exception as e:
+        print(f"Erro ao buscar jogo por id: {e}")
+        return None
