@@ -13,17 +13,18 @@ def exibir_jogo(jogo):
         st.image(jogo["brasao_fora"], width=48)
         st.markdown(f"**{jogo['time_fora']}**")
 
-    st.caption(f"📅 {jogo['data_hora'].strftime('%d/%m/%Y %H:%M')} | 🧩 Grupo {jogo['grupo']}")
+    # Converte para datetime nativo
+    data_jogo = pd.to_datetime(jogo["data_hora"]).to_pydatetime()
 
-    # Botão de palpite
+    st.caption(f"📅 {data_jogo.strftime('%d/%m/%Y %H:%M')} | 🧩 Grupo {jogo['grupo']}")
+
     if st.button(f"💬 Palpite - {jogo['time_casa']} x {jogo['time_fora']}", key=f"palpite_{jogo['id']}"):
         if not st.session_state.get("logged_in", False):
             st.warning("Efetue o seu cadastro para participar do bolão.")
             st.session_state["menu"] = "Login"
             st.rerun()
         else:
-            # Verifica se ainda está dentro do prazo (até 45min antes do jogo)
-            limite = jogo["data_hora"] - timedelta(minutes=45)
+            limite = data_jogo - timedelta(minutes=45)
             if datetime.now() > limite:
                 st.error("⏰ Palpites encerrados para este jogo.")
             else:
