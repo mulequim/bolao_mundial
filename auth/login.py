@@ -11,7 +11,7 @@ def login_page():
         st.success(f"Você está logado como {st.session_state.username}")
         if st.button("Ir para o Dashboard"):
             st.session_state["menu"] = "Dashboard"
-                st.rerun()
+            st.rerun()
         if st.button("Logout"):
             logout_user()
             st.info("Sessão encerrada.")
