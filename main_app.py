@@ -32,6 +32,9 @@ elif menu == "Dashboard":
         st.write("Aqui vai o painel principal do bolão.")
     else:
         st.warning("Faça login para acessar o dashboard.")
+elif menu == "Palpite":
+    from pages.palpite import palpite_page
+    palpite_page()
 else:
     # Página inicial (preview dos jogos + chamada para login/cadastro)
     st.subheader("⚽ Fase de Grupos - Copa 2026")
