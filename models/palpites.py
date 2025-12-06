@@ -8,9 +8,19 @@ def create_palpite(user_id: int, jogo_id: int, palpite_casa: int, palpite_fora: 
     try:
         with db.engine.begin() as conn:
             conn.execute(
-                text("INSERT INTO palpites (user_id, jogo_id, palpite_casa, palpite_fora) "
-                     "VALUES (:user_id, :jogo_id, :palpite_casa, :palpite_fora)"),
-                {"user_id": user_id, "jogo_id": jogo_id, "palpite_casa": palpite_casa, "palpite_fora": palpite_fora}
+                text("""
+                    INSERT INTO palpites (user_id, jogo_id, palpite_casa, palpite_fora)
+                    VALUES (:user_id, :jogo_id, :palpite_casa, :palpite_fora)
+                    ON CONFLICT (user_id, jogo_id)
+                    DO UPDATE SET palpite_casa = EXCLUDED.palpite_casa,
+                                  palpite_fora = EXCLUDED.palpite_fora
+                """),
+                {
+                    "user_id": user_id,
+                    "jogo_id": jogo_id,
+                    "palpite_casa": palpite_casa,
+                    "palpite_fora": palpite_fora
+                }
             )
         return True
     except Exception as e:
@@ -19,8 +29,20 @@ def create_palpite(user_id: int, jogo_id: int, palpite_casa: int, palpite_fora: 
 
 def read_palpites_by_user(user_id: int) -> pd.DataFrame:
     try:
-        query = text("SELECT * FROM palpites WHERE user_id = :user_id")
+        query = text("SELECT * FROM palpites WHERE user_id = :user_id ORDER BY jogo_id")
         return pd.read_sql(query, db.engine, params={"user_id": user_id})
     except Exception as e:
         print(f"Erro ao buscar palpites: {e}")
         return pd.DataFrame()
+
+def read_palpite(user_id: int, jogo_id: int) -> dict | None:
+    """Busca um palpite específico de um usuário para um jogo"""
+    try:
+        query = text("SELECT * FROM palpites WHERE user_id = :user_id AND jogo_id = :jogo_id")
+        df = pd.read_sql(query, db.engine, params={"user_id": user_id, "jogo_id": jogo_id})
+        if df.empty:
+            return None
+        return df.iloc[0].to_dict()
+    except Exception as e:
+        print(f"Erro ao buscar palpite: {e}")
+        return None
