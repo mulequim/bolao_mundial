@@ -28,12 +28,15 @@ def exibir_jogo(jogo):
             limite = data_jogo - timedelta(minutes=45)
             agora = datetime.now()
 
-            # Agora e limite são ambos datetime.datetime
-            if agora > limite:
-                st.error("⏰ Palpites encerrados para este jogo.")
-            else:
-                st.session_state["jogo_selecionado"] = jogo["id"]
-                st.session_state["menu"] = "Palpite"
-                st.rerun()
+            # Ambos são datetime.datetime
+            try:
+                if agora > limite:
+                    st.error("⏰ Palpites encerrados para este jogo.")
+                else:
+                    st.session_state["jogo_selecionado"] = jogo["id"]
+                    st.session_state["menu"] = "Palpite"
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Erro ao comparar datas: {e}")
 
     st.markdown("---")
