@@ -1,8 +1,6 @@
-# utils/jogo_card.py
-import pandas as pd
 import streamlit as st
+import pandas as pd
 from datetime import datetime, timedelta
-
 
 def exibir_jogo(jogo):
     col1, col2, col3 = st.columns([2, 1, 2])
@@ -26,8 +24,11 @@ def exibir_jogo(jogo):
             st.session_state["menu"] = "Login"
             st.rerun()
         else:
+            # Limite de 45 minutos antes do jogo
             limite = data_jogo - timedelta(minutes=45)
-            if datetime.now() > limite:
+            agora = datetime.now()
+
+            if agora > limite:
                 st.error("⏰ Palpites encerrados para este jogo.")
             else:
                 st.session_state["jogo_selecionado"] = jogo["id"]
