@@ -4,7 +4,7 @@ from db_manager import DBManager
 
 db = DBManager()
 
-def create_palpite(user_id: int, jogo_id: int, palpite_casa: int, palpite_fora: int) -> bool:
+def salvar_palpite(user_id: int, jogo_id: int, palpite_casa: int, palpite_fora: int) -> bool:
     try:
         with db.engine.begin() as conn:
             conn.execute(
