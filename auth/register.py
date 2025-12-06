@@ -25,9 +25,11 @@ def register_page():
                 password_hash = hash_password(password)
                 ok = create_user(username, name, password_hash, function, email)
                 if ok:
-                    st.success("Usuário cadastrado com sucesso!")
-                    st.session_state["menu"] = "Login"
-                    st.rerun()
+                    st.success("Usuário cadastrado com sucesso! 🎉")
+                    # Botão para ir ao login
+                    if st.button("➡️ Ir para Login"):
+                        st.session_state["menu"] = "Login"
+                        st.rerun()
                 else:
                     st.error("Erro ao cadastrar usuário.")
         else:
