@@ -13,7 +13,7 @@ def exibir_jogo(jogo):
         st.image(jogo["brasao_fora"], width=48)
         st.markdown(f"**{jogo['time_fora']}**")
 
-    # Converte para datetime nativo
+    # Converte para datetime nativo (garantido)
     data_jogo = pd.to_datetime(jogo["data_hora"]).to_pydatetime()
 
     st.caption(f"📅 {data_jogo.strftime('%d/%m/%Y %H:%M')} | 🧩 Grupo {jogo['grupo']}")
@@ -28,6 +28,7 @@ def exibir_jogo(jogo):
             limite = data_jogo - timedelta(minutes=45)
             agora = datetime.now()
 
+            # Agora e limite são ambos datetime.datetime
             if agora > limite:
                 st.error("⏰ Palpites encerrados para este jogo.")
             else:
