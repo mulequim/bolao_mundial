@@ -26,10 +26,21 @@ def read_games() -> pd.DataFrame:
         print(f"Erro ao listar jogos: {e}")
         return pd.DataFrame()
 
+
 def read_all_games() -> pd.DataFrame:
-    query = text("SELECT * FROM jogos ORDER BY data_hora;")
-    return pd.read_sql(query, db.engine)
-    
+    try:
+        query = text("SELECT * FROM jogos ORDER BY data_hora;")
+        df = pd.read_sql(query, db.engine)
+
+        # Converte a coluna data_hora para datetime com timezone
+        tz = pytz.timezone("America/Sao_Paulo")
+        df["data_hora"] = pd.to_datetime(df["data_hora"]).dt.tz_convert(tz)
+
+        return df
+    except Exception as e:
+        print(f"Erro ao listar jogos: {e}")
+        return pd.DataFrame()
+
 def read_game_by_id(jogo_id: int) -> dict | None:
     try:
         query = text("SELECT * FROM jogos WHERE id = :id")
@@ -37,6 +48,16 @@ def read_game_by_id(jogo_id: int) -> dict | None:
         if df.empty:
             return None
 
+        jogo = df.iloc[0].to_dict()
+
+        # Converte data_hora para datetime com timezone
+        tz = pytz.timezone("America/Sao_Paulo")
+        jogo["data_hora"] = pd.to_datetime(jogo["data_hora"]).tz_convert(tz).to_pydatetime()
+
+        return jogo
+    except Exception as e:
+        print(f"Erro ao buscar jogo por id: {e}")
+        return None
         jogo = df.iloc[0].to_dict()
 
         # Converte data_hora para datetime com timezone
