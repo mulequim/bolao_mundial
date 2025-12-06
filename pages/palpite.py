@@ -7,8 +7,8 @@ from models.jogos import read_game_by_id
 from models.palpites import salvar_palpite
 
 def palpite_page():
-    tz = pytz.timezone("America/Sao_Paulo")  # define fuso horário
-    
+    tz = pytz.timezone("America/Sao_Paulo")
+
     jogo_id = st.session_state.get("jogo_selecionado")
     if not jogo_id:
         st.warning("Nenhum jogo selecionado.")
@@ -19,23 +19,30 @@ def palpite_page():
         st.error("Jogo não encontrado.")
         return
 
-    # Converte para datetime com timezone
-    data_jogo = pd.to_datetime(jogo["data_hora"]).tz_convert(tz).to_pydatetime()
+    data_jogo = jogo["data_hora"]  # já vem convertido com timezone
 
     st.subheader("💬 Palpite")
-    st.markdown(f"**{jogo['time_casa']} 🆚 {jogo['time_fora']}**")
+
+    # Layout em duas colunas com bandeiras e nomes
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.image(f"assets/flags/{jogo['time_casa'].lower()}.png", width=80)  # bandeira do time da casa
+        st.markdown(f"### {jogo['time_casa']}")
+        placar_casa = st.number_input("Gols", min_value=0, step=1, key="placar_casa")
+    with col2:
+        st.image(f"assets/flags/{jogo['time_fora'].lower()}.png", width=80)  # bandeira do time de fora
+        st.markdown(f"### {jogo['time_fora']}")
+        placar_fora = st.number_input("Gols", min_value=0, step=1, key="placar_fora")
+
     st.caption(f"Grupo {jogo['grupo']} | {data_jogo.strftime('%d/%m/%Y %H:%M')}")
 
     # Verifica prazo
     limite = data_jogo - timedelta(minutes=45)
-    agora = datetime.now(tz)  # também com timezone
+    agora = datetime.now(tz)
 
     if agora > limite:
         st.error("⏰ Palpites encerrados para este jogo.")
         return
-
-    placar_casa = st.number_input(f"Gols de {jogo['time_casa']}", min_value=0, step=1)
-    placar_fora = st.number_input(f"Gols de {jogo['time_fora']}", min_value=0, step=1)
 
     if st.button("Enviar Palpite"):
         salvar_palpite(st.session_state.user_id, jogo_id, placar_casa, placar_fora)
