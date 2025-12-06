@@ -23,14 +23,16 @@ def palpite_page():
 
     st.subheader("💬 Palpite")
 
-    # Layout em duas colunas com bandeiras e nomes
+    # Layout em duas colunas com brasões e nomes
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.image(f"assets/flags/{jogo['time_casa'].lower()}.png", width=80)  # bandeira do time da casa
+        if jogo.get("brasao_casa"):
+            st.image(jogo["brasao_casa"], width=80)
         st.markdown(f"### {jogo['time_casa']}")
         placar_casa = st.number_input("Gols", min_value=0, step=1, key="placar_casa")
     with col2:
-        st.image(f"assets/flags/{jogo['time_fora'].lower()}.png", width=80)  # bandeira do time de fora
+        if jogo.get("brasao_fora"):
+            st.image(jogo["brasao_fora"], width=80)
         st.markdown(f"### {jogo['time_fora']}")
         placar_fora = st.number_input("Gols", min_value=0, step=1, key="placar_fora")
 
