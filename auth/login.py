@@ -10,7 +10,8 @@ def login_page():
     if st.session_state.logged_in:
         st.success(f"Você está logado como {st.session_state.username}")
         if st.button("Ir para o Dashboard"):
-            st.switch_page("pages/dashboard.py")
+            st.session_state["menu"] = "Dashboard"
+                st.rerun()
         if st.button("Logout"):
             logout_user()
             st.info("Sessão encerrada.")
