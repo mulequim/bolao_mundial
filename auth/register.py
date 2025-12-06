@@ -27,8 +27,8 @@ def register_page():
                 if ok:
                     st.success("Usuário cadastrado com sucesso! 🎉")
                     # Botão para ir ao login
-                    if st.button("➡️ Ir para Login"):
-                        st.session_state["menu"] = "Login"
+                    if st.button("➡️ Ir para Dashboard"):
+                        st.session_state["menu"] = "Dashboard"
                         st.rerun()
                 else:
                     st.error("Erro ao cadastrar usuário.")
