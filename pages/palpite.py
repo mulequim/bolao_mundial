@@ -31,9 +31,9 @@ def palpite_page():
         st.markdown(f"### {jogo['time_casa']}")
         placar_casa = st.number_input("Gols", min_value=0, step=1, key="placar_casa")
     with col2:
-        if jogo.get("brasao_casa"):
-            st.image(jogo["brasao_casa"], width=80)
-        st.markdown(f"### {jogo['time_casa']}")
+        if jogo.get("brasao_fora"):
+            st.image(jogo["brasao_fora"], width=80)
+        st.markdown(f"### {jogo['time_fora']}")
         placar_fora = st.number_input("Gols", min_value=0, step=1, key="placar_fora")
 
     st.caption(f"Grupo {jogo['grupo']} | {data_jogo.strftime('%d/%m/%Y %H:%M')}")
