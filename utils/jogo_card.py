@@ -1,6 +1,8 @@
 # utils/jogo_card.py
+import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta
+
 
 def exibir_jogo(jogo):
     col1, col2, col3 = st.columns([2, 1, 2])
