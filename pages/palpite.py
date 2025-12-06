@@ -1,6 +1,8 @@
+import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta
 import pytz
+
 from models.jogos import read_game_by_id
 from models.palpites import salvar_palpite
 
