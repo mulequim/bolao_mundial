@@ -6,11 +6,22 @@ from pages.dashboard_preview import dashboard_preview
 
 st.set_page_config(page_title="Bolão Copa 2026", layout="wide")
 st.title("🏆 Bolão Copa do Mundo 2026")
+
+# Inicializa sessão
 init_session()
 
-# Menu lateral
-menu = st.sidebar.selectbox("Menu", ["Início", "Login", "Cadastro", "Dashboard"])
+# Garante que o estado do menu existe
+if "menu" not in st.session_state:
+    st.session_state["menu"] = "Início"
 
+# Sidebar com menu
+menu = st.sidebar.selectbox(
+    "Menu",
+    ["Início", "Login", "Cadastro", "Dashboard"],
+    index=["Início", "Login", "Cadastro", "Dashboard"].index(st.session_state["menu"])
+)
+
+# Renderização das páginas
 if menu == "Login":
     login_page()
 elif menu == "Cadastro":
@@ -28,8 +39,13 @@ else:
 
     st.markdown("---")
     st.info("🔐 Para participar do bolão, faça seu cadastro ou login!")
+
     col1, col2 = st.columns(2)
     with col1:
-        st.page_link("main_app.py", label="➡️ Login", icon="🔑")
+        if st.button("➡️ Login"):
+            st.session_state["menu"] = "Login"
+            st.experimental_rerun()
     with col2:
-        st.page_link("main_app.py", label="📝 Cadastro", icon="📋")
+        if st.button("📝 Cadastro"):
+            st.session_state["menu"] = "Cadastro"
+            st.experimental_rerun()
