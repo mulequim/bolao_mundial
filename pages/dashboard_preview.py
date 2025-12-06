@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from models.jogos import read_all_games
-from utils.jogo_card import exibir_jogo  # Certifique-se de que essa função está em utils/jogo_card.py
+from utils.jogo_card import exibir_jogo
 
 def dashboard_preview():
     st.subheader("🎉 A Copa está chegando!")
@@ -27,8 +27,16 @@ def dashboard_preview():
         for grupo in grupos:
             st.markdown(f"#### 🧩 Grupo {grupo}")
             jogos_grupo = jogos_dia[jogos_dia["grupo"] == grupo]
-            for _, jogo in jogos_grupo.iterrows():
-                exibir_jogo(jogo)  # visualização com bandeiras e botão "Palpite"
+
+            # Renderiza de 2 em 2
+            jogos_lista = list(jogos_grupo.iterrows())
+            for i in range(0, len(jogos_lista), 2):
+                cols = st.columns(2)
+                for j, col in enumerate(cols):
+                    if i + j < len(jogos_lista):
+                        _, jogo = jogos_lista[i + j]
+                        with col:
+                            exibir_jogo(jogo)
 
     st.markdown("### 🔐 Faça login para participar do bolão!")
     st.info("Cadastre-se ou faça login para enviar seus palpites e entrar no ranking.")
