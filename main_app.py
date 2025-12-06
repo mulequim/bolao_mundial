@@ -44,8 +44,8 @@ else:
     with col1:
         if st.button("➡️ Login"):
             st.session_state["menu"] = "Login"
-            st.experimental_rerun()
+            st.rerun()
     with col2:
         if st.button("📝 Cadastro"):
             st.session_state["menu"] = "Cadastro"
-            st.experimental_rerun()
+            st.rerun()
